@@ -1,7 +1,7 @@
 import io
 
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 import streamlit as st
 
 st.set_page_config(page_title="Radar de productos", page_icon="📡", layout="wide")
@@ -125,20 +125,20 @@ wide = agg.pivot(index="serie", columns=COL_PARAM, values=COL_VAL).reindex(colum
 if wide.isna().any().any():
     st.warning("Algunas series no tienen datos para todos los parámetros; aparecerán con huecos.")
 
-fig = go.Figure()
-for serie, row in wide.iterrows():
-    vals = row.tolist()
-    fig.add_trace(
-        go.Scatterpolar(
-            r=vals + [vals[0]],  # cierra el polígono
-            theta=parametros + [parametros[0]],
-            name=serie,
-            fill="toself" if relleno else "none",
-            opacity=0.6 if relleno else 1,
-            mode="lines+markers",
-            hovertemplate="%{theta}: %{r:.2f}<extra>" + serie + "</extra>",
-        )
-    )
+fig = px.line_polar(
+    agg,
+    r=COL_VAL,
+    theta=COL_PARAM,
+    color="serie",
+    line_close=True,  # cierra el polígono
+    markers=True,
+    category_orders={COL_PARAM: parametros},
+)
+fig.update_traces(
+    fill="toself" if relleno else "none",
+    opacity=0.6 if relleno else 1,
+    hovertemplate="%{theta}: %{r:.2f}<extra>%{fullData.name}</extra>",
+)
 
 if auto_range:
     radial = dict(visible=True, range=[0, float(wide.max().max()) * 1.1])
